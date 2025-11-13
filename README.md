@@ -415,3 +415,28 @@ I give up.
 ```
 _To resolve this : Update the syntax in the file sky130_fd_sc_hd.v at or around line 74452._
 
+###### Change:
+```bash
+`endif SKY130_FD_SC_HD__LPFLOW_BLEEDER_FUNCTIONAL_V
+```
+###### To:
+```bash
+`endif // SKY130_FD_SC_HD__LPFLOW_BLEEDER_FUNCTIONAL_V
+```
+<img width="1093" height="716" alt="image" src="https://github.com/user-attachments/assets/be79b5d0-c779-42b9-a72f-af5eabc67b11" />
+
+---
+### **Step 2: Navigate to the Post-Synthesis Simulation Output Directory**
+```bash
+cd output/post_synth_sim/
+```
+
+### **Step 3: Run the Simulation**
+
+```bash
+iverilog -o ~/Desktop/VLSI/VSDBabySoC/output/post_synth_sim/post_synth_sim.out -DPOST_SYNTH_SIM -DFUNCTIONAL -DUNIT_DELAY=#1 -I ~/Desktop/VLSI/VSDBabySoC/src/include -I ~/Desktop/VLSI/VSDBabySoC/src/module ~/Desktop/VLSI/VSDBabySoC/src/module/testbench.v
+./post_synth_sim.out
+```
+<img width="1215" height="262" alt="image" src="https://github.com/user-attachments/assets/e6d961aa-961d-40cc-befe-76669e1cd83e" />
+
+---
