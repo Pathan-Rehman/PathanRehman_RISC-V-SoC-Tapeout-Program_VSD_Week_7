@@ -250,3 +250,168 @@ read_liberty -lib ~/Desktop/VLSI/VSDBabySoC/src/lib/avsddac.lib
 read_liberty -lib ~/Desktop/VLSI/VSDBabySoC/src/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
 ```
 <img width="1008" height="262" alt="image" src="https://github.com/user-attachments/assets/5d45b841-4db1-46d2-b4e3-da40f12a5bc0" />
+
+### **Step 3: Run Synthesis Targeting `vsdbabysoc`**
+```bash
+yosys> synth -top vsdbabysoc
+```
+<img width="1219" height="771" alt="image" src="https://github.com/user-attachments/assets/40ecdda6-f1e5-4928-b605-5bbba998d612" />
+
+### **Step 4: Map D Flip-Flops to Standard Cells**
+
+```bash
+yosys> dfflibmap -liberty ~/Desktop/VLSI/VSDBabySoC/src/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
+```
+<img width="1216" height="743" alt="image" src="https://github.com/user-attachments/assets/18018ff1-e16f-46e8-8aed-cb89db2ddeb5" />
+
+### **Step 5: Perform Optimization and Technology Mapping**
+```bash
+yosys> opt
+yosys> abc -liberty ~/Desktop/VLSI/VSDBabySoC/src/lib/sky130_fd_sc_hd__tt_025C_1v80.lib -script +strash;scorr;ifraig;retime;{D};strash;dch,-f;map,-M,1,{D}
+```
+
+| Step           | Purpose                                                              |
+| -------------- | -------------------------------------------------------------------- |
+| `strash`       | Structural hashing (reduces logic redundancy)                        |
+| `scorr`        | Sequential sweeping for redundancy removal                           |
+| `ifraig`       | Incremental FRAIGing (logic equivalence checking and optimization)   |
+| `retime;{D}`   | Move registers across combinational logic to optimize timing         |
+| `strash`       | Re-run structural hashing after retiming                             |
+| `dch,-f`       | Delay-aware combinational optimization with fast mode                |
+| `map,-M,1,{D}` | Map logic to gates minimizing area (`-M,1`) and retime-aware (`{D}`) |
+
+
+<img width="1214" height="739" alt="image" src="https://github.com/user-attachments/assets/44180b70-054a-4ce8-b292-80b00e3bc216" />
+
+
+<img width="1212" height="740" alt="image" src="https://github.com/user-attachments/assets/899e93e9-7d44-4479-ac79-8fda5ba515c2" />
+
+### **Step 6: Perform Final Clean-Up and Renaming**
+
+```bash
+yosys> flatten
+yosys> setundef -zero
+yosys> clean -purge
+yosys> rename -enumerate
+```
+| **Command**         | **Purpose / Usage**                                                                    |
+| ------------------- | -------------------------------------------------------------------------------------- |
+| `flatten`           | Flattens the entire design hierarchy into a single-level netlist.                      |
+| `setundef -zero`    | Replaces all undefined (`x`) logic values with logical `0` to avoid simulation issues. |
+| `clean -purge`      | Removes all unused wires, cells, and modules; `-purge` makes it more aggressive.       |
+| `rename -enumerate` | Renames internal wires and cells to unique, numbered names for consistency.            |
+
+<img width="1214" height="744" alt="image" src="https://github.com/user-attachments/assets/c518e850-6dbc-4258-9775-564b12a44d35" />
+
+### **Step 7: Check Statistics**
+```bash
+yosys> stat
+```
+13. Printing statistics.
+```shell
+=== vsdbabysoc ===
+
+   Number of wires:               4709
+   Number of wire bits:           6183
+   Number of public wires:        4709
+   Number of public wire bits:    6183
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               5885
+     avsddac                         1
+     avsdpll                         1
+     sky130_fd_sc_hd__a2111oi_0      8
+     sky130_fd_sc_hd__a211oi_1      12
+     sky130_fd_sc_hd__a21boi_0       3
+     sky130_fd_sc_hd__a21o_2         4
+     sky130_fd_sc_hd__a21oi_1      682
+     sky130_fd_sc_hd__a221oi_1     165
+     sky130_fd_sc_hd__a22oi_1      133
+     sky130_fd_sc_hd__a311oi_1       8
+     sky130_fd_sc_hd__a31oi_1      333
+     sky130_fd_sc_hd__a32o_1         1
+     sky130_fd_sc_hd__a32oi_1        2
+     sky130_fd_sc_hd__a41oi_1       13
+     sky130_fd_sc_hd__and2_2         3
+     sky130_fd_sc_hd__and3_2         1
+     sky130_fd_sc_hd__clkinv_1     579
+     sky130_fd_sc_hd__dfxtp_1     1144
+     sky130_fd_sc_hd__lpflow_inputiso0p_1      1
+     sky130_fd_sc_hd__mux2i_1       11
+     sky130_fd_sc_hd__nand2_1      823
+     sky130_fd_sc_hd__nand3_1      278
+     sky130_fd_sc_hd__nand3b_1       1
+     sky130_fd_sc_hd__nand4_1       48
+     sky130_fd_sc_hd__nor2_1       388
+     sky130_fd_sc_hd__nor3_1        33
+     sky130_fd_sc_hd__nor3b_1        1
+     sky130_fd_sc_hd__nor4_1         6
+     sky130_fd_sc_hd__o2111a_1       2
+     sky130_fd_sc_hd__o2111ai_1     24
+     sky130_fd_sc_hd__o211ai_1      48
+     sky130_fd_sc_hd__o21a_1         8
+     sky130_fd_sc_hd__o21ai_0      867
+     sky130_fd_sc_hd__o21bai_1      13
+     sky130_fd_sc_hd__o221ai_1       6
+     sky130_fd_sc_hd__o22ai_1      154
+     sky130_fd_sc_hd__o311ai_0       4
+     sky130_fd_sc_hd__o31ai_1        1
+     sky130_fd_sc_hd__o41ai_1        2
+     sky130_fd_sc_hd__or2_2         14
+     sky130_fd_sc_hd__or4_2          1
+     sky130_fd_sc_hd__xnor2_1       16
+     sky130_fd_sc_hd__xor2_1        42
+```
+
+### **Step 8: Write the Synthesized Netlist**
+```bash
+
+yosys> write_verilog -noattr ~/Desktop/VLSI/VSDBabySoC/output/post_synth_sim/vsdbabysoc.synth.v
+```
+<img width="929" height="196" alt="image" src="https://github.com/user-attachments/assets/29f71fa3-ea09-49c6-bef4-1369223b37b2" />
+
+## POST_SYNTHESIS SIMULATION AND WAVEFORMS
+---
+
+### **Step 1: Compile the Testbench**
+
+Before running the iverilog command, copy the necessary standard cell and primitive models:
+These files must be present in the same directory as the testbench (src/module) to resolve all module references during compilation.
+
+You need to have sky130RTLDesignAndSynthesisWorkshop directory you can clone it from this [link](https://github.com/kunalg123/sky130RTLDesignAndSynthesisWorkshop)
+
+```bash
+~/Desktop/VLSI/VSDBabySoC/src/module$ cp -r ~/Desktop/VLSI/sky130RTLDesignAndSynthesisWorkshop/my_lib/verilog_model/sky130_fd_sc_hd.v .
+~/Desktop/VLSI/VSDBabySoC/src/module$ cp -r ~/Desktop/VLSI/sky130RTLDesignAndSynthesisWorkshop/my_lib/verilog_model/primitives.v .
+```
+
+To ensure that the synthesized Verilog file _(vsdbabysoc.synth.v)_ is available in the src/module directory for further processing or simulation, you can copy it from the output directory to the src/module directory. Here is the step to do that:
+```bash
+~/Desktop/VLSI/VSDBabySoC$ cp -r ~/Desktop/VLSI/VSDBabySoC/output/post_synth_sim/vsdbabysoc.synth.v ~/Desktop/VLSI/VSDBabySoC/src/module/
+```
+
+Run the following `iverilog` command to compile the testbench:
+```bash
+iverilog -o ~/Desktop/VLSI/VSDBabySoC/output/post_synth_sim/post_synth_sim.out -DPOST_SYNTH_SIM -DFUNCTIONAL -DUNIT_DELAY=#1 -I ~/Desktop/VLSI/VSDBabySoC/src/include -I ~/Desktop/VLSI/VSDBabySoC/src/module ~/Desktop/VLSI/VSDBabySoC/src/module/testbench.v
+```
+
+| **Option / Argument**                                                      | **Purpose / Description**                                                            |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `iverilog`                                                                 | Icarus Verilog compiler used to compile Verilog files into a simulation executable.  |
+| `-o /home/spatha/VLSI/VSDBabySoC/output/post_synth_sim/post_synth_sim.out` | Specifies the output binary file for simulation.                                     |
+| `-DPOST_SYNTH_SIM`                                                         | Defines the macro `POST_SYNTH_SIM` (used in testbench to switch simulation modes).   |
+| `-DFUNCTIONAL`                                                             | Defines `FUNCTIONAL` to use behavioral models instead of detailed gate-level timing. |
+| `-DUNIT_DELAY=#1`                                                          | Assigns a unit delay of `#1` to all gates for post-synthesis simulation.             |
+| `-I /home/spatha/VLSI/VSDBabySoC/src/include`                              | Adds the `include` directory to the search path for `\`include\` directives.         |
+| `-I /home/spatha/VLSI/VSDBabySoC/src/module`                               | Adds the `module` directory to the include path for additional module references.    |
+| `/home/spatha/VLSI/VSDBabySoC/src/module/testbench.v`                      | Specifies the testbench file as the top-level design for simulation.                 |
+
+#### ❗Note - You may encounter this error:
+```bash
+iverilog -o ~/Desktop/VLSI/VSDBabySoC/output/post_synth_sim/post_synth_sim.out -DPOST_SYNTH_SIM -DFUNCTIONAL -DUNIT_DELAY=#1 -I ~/Desktop/VLSI/VSDBabySoC/src/include -I ~/Desktop/VLSI/VSDBabySoC/src/module ~/Desktop/VLSI/VSDBabySoC/src/module/testbench.v
+/home/vsduser/Desktop/VLSI/VSDBabySoC/src/module/sky130_fd_sc_hd.v:74583: syntax error
+I give up.
+```
+_To resolve this : Update the syntax in the file sky130_fd_sc_hd.v at or around line 74452._
+
