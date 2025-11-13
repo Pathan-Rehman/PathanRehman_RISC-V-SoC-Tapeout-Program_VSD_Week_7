@@ -52,23 +52,30 @@ To convert it into a `.v` file for simulation, follow the steps below:
 sudo apt update
 sudo apt install python3-venv python3-pip
 ```
+
 <img width="1217" height="662" alt="image" src="https://github.com/user-attachments/assets/a75955ab-5383-402f-b257-475adeaf671a" />
+
 ```
 # Step 2: Create and activate a virtual environment
 cd ~/VLSI/VSDBabySoC/
 python3 -m venv sp_env
 source sp_env/bin/activate
 ```
+
 <img width="1215" height="123" alt="image" src="https://github.com/user-attachments/assets/bc9e2d07-6968-4b5f-b6bf-e48b3a7a6365" />
+
 ```
 # Step 3: Install SandPiper-SaaS inside the virtual environment
 pip install pyyaml click sandpiper-saas
 ```
+
 <img width="1212" height="390" alt="image" src="https://github.com/user-attachments/assets/9a223eeb-c06c-4f99-9059-e9dcf5ad1683" />
+
 ```
 # Step 4: Convert rvmyth.tlv to Verilog
 sandpiper-saas -i ./src/module/*.tlv -o rvmyth.v --bestsv --noline -p verilog --outdir ./src/module/
 ```
+
 <img width="1215" height="331" alt="image" src="https://github.com/user-attachments/assets/bbf2df7f-7d32-48df-a2dc-a9b5fbfca4a3" />
 
 ✅ After running the above command, rvmyth.v will be generated in the src/module/ directory.
