@@ -440,3 +440,228 @@ iverilog -o ~/Desktop/VLSI/VSDBabySoC/output/post_synth_sim/post_synth_sim.out -
 <img width="1215" height="262" alt="image" src="https://github.com/user-attachments/assets/e6d961aa-961d-40cc-befe-76669e1cd83e" />
 
 ---
+
+### **Step 4: View the Waveforms in GTKWave**
+
+```bash
+gtkwave post_synth_sim.vcd
+```
+---
+<img width="889" height="143" alt="image" src="https://github.com/user-attachments/assets/79181196-f224-4abd-952e-9812eebbc6b3" />
+<img width="1214" height="767" alt="image" src="https://github.com/user-attachments/assets/5f3fdca0-50bb-4f30-b9d4-55f1f895e4a0" />
+
+## Comparing Pre-Synthesis and Post-Synthesis Output
+
+To ensure that the synthesis process did not alter the original design behavior, the output from the pre-synthesis simulation was compared with the post-synthesis simulation.
+
+Both simulations were run using GTKWave, and the resulting waveforms were observed.
+
+✅ _The outputs match exactly, confirming that the functionality is preserved across the synthesis flow._
+
+_This validates that the synthesized netlist is functionally equivalent to the RTL design._
+
+## Timing Graphs using openSTA
+
+#### Input Files
+
+- `*.v`  : Gate-level Verilog Netlist  
+- `*.lib` : Liberty Timing Libraries  
+- `*.sdc` : Synopsys Design Constraints (clocks, delays, false paths)  
+- `*.sdf` : Annotated Delay File (optional)  
+- `*.spef`: Parasitics (RC extraction)  
+- `*.vcd` / `*.saif` : Switching Activity for Power Analysis 
+
+#### Clock Modeling Features
+
+- `Generated Clocks`: Derived from existing clocks  
+- `Latency`: Clock propagation delay  
+- `Source Latency`: Insertion delay from clock source to input  
+- `Uncertainty`: Jitter or skew margins  
+- `Propagated vs. Ideal`: Real vs. ideal clock network modeling  
+- `Gated Clock Checks`: Verifies clocks that are enabled conditionally  
+- `Multi-Frequency Clocks`: Analyzes multiple domains  
+
+#### Exception Paths
+
+Timing exceptions refine analysis for real behavior:
+
+- `set_false_path` — Ignores invalid functional paths  
+- `set_multicycle_path` — Allows multiple clock cycles  
+- `set_max_delay` / `set_min_delay` — Custom timing limits
+
+#### Delay calculation
+
+- `Integrated Dartu/Menezes/Pileggi RC effective capacitance algorithm`
+
+Models effective capacitance for RC networks to compute realistic gate and net delays. It balances accuracy and runtime using an efficient algorithm developed for timing engines.
+
+- `External delay calculator API`
+    
+Allows plugging in custom delay calculators for advanced or proprietary models (e.g., layout-aware or temperature-adaptive models). Useful for integrating tool flows beyond standard Liberty data.
+
+#### Timing Analysis and Reporting
+
+OpenSTA provides a rich set of commands for analyzing timing paths, delays, and setup/hold checks:
+
+- `report_checks`  
+  Reports timing violations across specified paths using options like `-from`, `-through`, and `-to`. Supports multi-path analysis to any endpoint.
+
+  ```tcl
+  report_checks -from [get_pins U1/Q] -to [get_pins U2/D]
+  ```
+#### Timing Paths 
+
+`What do you mean by Timing Paths?`
+* It Refer to the logical paths a signal takes through a digital circuit from its source to its destination, including sequential and combinational elements. STA analyzes timing paths to determine their delay, setup and hold times, and other timing parameters specified in the constraints. Timing paths are categorized into combinatorial and sequential, and the critical path is the longest path in the design with the maximum operating frequency.
+
+#### Timing Path Elements
+   
+Timing path elements in STA are the start point, where a signal originates, the end point, where it terminates, and the combinational logic elements, such as gates, that the signal passes through. Timing paths are traced to determine the overall delay and timing performance of the digital circuit.
+
+**Start Point**: Is the point where the signal originates or enters the digital circuit. This point is typically an input port of the design, where the signal is first introduced to the circuit.
+
+The start point of a timing path can be either:
+
+- An input port, where data enters the design, or
+
+- The clock pin of a register, where data is launched on a clock edge.
+
+**End Point:** Is the point where the signal terminates or leaves the digital circuit. This point is typically an output port of the design, where the signal is outputted from the circuit.
+
+The end point of a timing path can be either:
+
+- A register's data input pin (D pin), where data is captured by the clock edge, or
+
+- An output port, where data must be available at a specific time.
+
+**Combinational Logic:** Combinational logic elements are the building blocks of a digital circuit and are used to perform logic operations on the signals passing through the circuit. These elements do not store any information, and the output of a combinational logic element is solely determined by the input values at that moment.
+
+The diagram illustrates four distinct timing paths:
+
+Path 1: Input to Register (in2reg)
+
+Path 2: Register to Register (reg2reg)
+
+Path 3: Register to Output (reg2out)
+
+Path 4: Input to Output (in2out)
+
+<img width="646" height="521" alt="image" src="https://github.com/user-attachments/assets/42c9e24a-598e-4302-8244-c5a4440e0461" />
+
+#### Setup and Hold Checks
+
+-> **What is Setup Check?**
+* Is the minimum time that the data must be stable before the clock edge, and if this time is not met, it can lead to setup violations, resulting in incorrect data being stored in the sequential element. The setup check is essential to ensure correct timing behavior of a digital circuit and prevent data loss or other timing-related issues.
+* The setup time of a flip-flop depends on the technology node, operating conditions, and other factors. The value of the setup time is usually provided in the logic libraries.
+
+-> **What is Hold Check?**
+* Is the minimum amount of time that the data must remain stable after the clock edge, and if this time is not met, it can lead to hold violations, resulting in incorrect data being stored in the sequential element. The hold check is necessary to prevent issues such as data corruption, metastability, and other timing-related problems in digital circuits.
+
+#### Slack Calculation 
+
+Setup and hold slack is defined as the difference between data required time and data arrivals time. 
+
+>Setup slack = Data required time - Data arrival time
+
+>Hold slack = Data arrival time - Data required time
+
+-> **What is Data Arrival Time?**
+* The time taken by the signal to travel from the start point to the end point of the digital circuit. 
+
+-> **What is Data Required Time?** 
+* The time for the clock to traverse through the clock path of the digital circuit. 
+
+-> **What is Slack?** 
+* It is difference between the desired arrival times and the actual arrival time for a signal. 
+* Positive Slack indicates that the design is meeting the timing and still it can be improved. 
+* Zero slack means that the design is critically working at the desired frequency. 
+* Negative slack means, design has not achieved the specified timings at the specified frequency.
+* Slack has to be positive always and negative slack indicates a violation in timing.
+
+#### Common SDC Constraints
+
+In Static Timing Analysis (STA), **Synopsys Design Constraints (SDC)** are used to define the behavior, environment, and timing requirements of a digital design. These constraints are categorized based on their function and purpose.
+
+**Operating Conditions** are set using the `set_operating_conditions` command, which defines the process-voltage-temperature (PVT) corner used during analysis.
+
+**Wire-Load Models** such as `set_wire_load_mode`, `set_wire_load_model`, and `set_wire_load_selection_group` are used to estimate interconnect capacitance and resistance based on fanout and hierarchy when post-layout parasitics are unavailable.
+
+**Environmental Constraints** define the electrical behavior of I/Os. The `set_drive` and `set_driving_cell` commands model input driving strength or source cell characteristics. Output loads are described using `set_load` or `set_fanout_load`. Additional attributes like `set_input_transition` (input slew) and `set_port_fanout_number` (expected output fanout) further refine environment models.
+
+**Design Rule Constraints** ensure physical design adherence. These include `set_max_capacitance` to limit load, `set_max_fanout` to cap number of loads, and `set_max_transition` to restrict slew for signal integrity and EM/IR compliance.
+
+**Timing Constraints** are the core of STA. `create_clock` defines primary clocks, while `create_generated_clock` handles derived clocks. Clock behavior is further detailed using `set_clock_latency`, `set_clock_transition`, and `set_clock_uncertainty`. Timing analysis can be guided with `set_propagated_clock` to consider actual delays, or `set_disable_timing` to ignore specific paths.
+
+Signal timing is modeled using `set_input_delay` and `set_output_delay`. The `set_input_delay` command specifies when input data arrives relative to the clock edge, crucial for setup/hold timing analysis. The `set_output_delay` command defines the required time by which output signals must be valid, helping STA tools verify that data is launched and captured within acceptable timing windows.
+
+**Timing Exceptions** allow control over non-functional or multi-cycle paths. `set_false_path` removes paths from analysis, `set_max_delay` restricts path delay, and `set_multicycle_path` increases the allowed number of clock cycles for timing paths that do not need single-cycle timing closure.
+
+Lastly, **Power Constraints** help manage dynamic and leakage power budgets using `set_max_dynamic_power` and `set_max_leakage_power`. These are especially useful in power-aware synthesis and verification flows.
+
+
+| Category              | Commands                                                                 |
+|-----------------------|--------------------------------------------------------------------------|
+| **Operating Conditions** | `set_operating_conditions`                                                |
+| **Wire-load Models**     | `set_wire_load_mode`  <br> `set_wire_load_model` <br> `set_wire_load_selection_group` |
+| **Environmental**        | `set_drive` <br> `set_driving_cell` <br> `set_load` <br> `set_fanout_load` <br> `set_input_transition` <br> `set_port_fanout_number` |
+| **Design Rules**         | `set_max_capacitance` <br> `set_max_fanout` <br> `set_max_transition`         |
+| **Timing**               | `create_clock` <br> `create_generated_clock` <br> `set_clock_latency` <br> `set_clock_transition` <br> `set_disable_timing` <br> `set_propagated_clock` <br> `set_clock_uncertainty` <br> `set_input_delay` <br> `set_output_delay` |
+| **Exceptions**           | `set_false_path` <br> `set_max_delay` <br> `set_multicycle_path`              |
+| **Power**                | `set_max_dynamic_power` <br> `set_max_leakage_power`                          |
+
+## Installation of OpenSTA
+
+**Note:** Installation instructions are adapted from the official OpenSTA repository:
+🔗 https://github.com/parallaxsw/OpenSTA
+
+#### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/parallaxsw/OpenSTA.git
+cd OpenSTA
+```
+
+<img width="1212" height="308" alt="image" src="https://github.com/user-attachments/assets/54074358-10de-42b4-b986-ace9c5e8bef4" />
+
+#### Step 2: Build the Docker Image
+```bash
+\docker build --file Dockerfile.ubuntu22.04 --tag opensta .
+```
+This builds a Docker image named opensta using the provided Ubuntu 22.04 Dockerfile. All dependencies are installed during this step.
+
+<img width="1219" height="503" alt="image" src="https://github.com/user-attachments/assets/6a6f053a-2d2c-4f27-85c6-8174875c23b1" />
+
+#### Step 3: Run the OpenSTA Container
+To run a docker container using the OpenSTA image, use the -v option to docker to mount direcories with data to use and -i to run interactively.
+```bash
+\docker run -i -v $HOME:/data opensta
+```
+<img width="858" height="148" alt="image" src="https://github.com/user-attachments/assets/5e8f146a-f3b7-491e-8e9c-3cd32b90b9dc" />
+
+You now have OpenSTA installed and running inside a Docker container. After successful installation, you will see the % prompt—this indicates that the OpenSTA interactive shell is ready for use.
+
+### VSDBabySoC basic timing analysis
+
+#### Prepare Required Files
+
+To begin static timing analysis on the VSDBabySoC design, you must organize and prepare the required files in specific directories.
+
+```bash
+# Create a directory to store Liberty timing libraries
+~/Desktop/VLSI/VSDBabySoC/OpenSTA$ mkdir -p examples/timing_libs/
+~/Desktop/VLSI/VSDBabySoC/OpenSTA/examples$ ls timing_libs/
+avsddac.lib  avsdpll.lib  sky130_fd_sc_hd__tt_025C_1v80.lib
+# Create a directory to store synthesized netlist and constraint files
+~/Desktop/VLSI/VSDBabySoC/OpenSTA$ mkdir -p examples/BabySoC
+~/Desktop/VLSI/VSDBabySoC/OpenSTA/examples$ ls BabySoC/
+gcd_sky130hd.sdc vsdbabysoc_synthesis.sdc  vsdbabysoc.synth.v
+```
+These files include:
+
+- Standard cell library: sky130_fd_sc_hd__tt_025C_1v80.lib
+
+- IP-specific Liberty libraries: avsdpll.lib, avsddac.lib
+
+- Synthesized gate-level netlist: vsdbabysoc.synth.v
+
+- Timing constraints: vsdbabysoc_synthesis.sdc
