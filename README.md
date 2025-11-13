@@ -130,7 +130,7 @@ gtkwave output/pre_synth_sim/pre_synth_sim.vcd
 ```
 Drag and drop the CLK, reset, OUT (DAC), and RV TO DAC [9:0] signals to their respective locations in the simulation tool
 
- ![Alt Text](Images/today4.jpg)
+<img width="1212" height="766" alt="image" src="https://github.com/user-attachments/assets/9c35f8dc-449a-417e-ad87-fba903b1f253" />
 
 In this picture we can see the following signals:
 
@@ -145,3 +145,27 @@ In this picture we can see the following signals:
 **OUT**: This is a real datatype wire which can simulate analog values. It is the output wire real OUT signal of the DAC module. This signal comes from the DAC, originally. 
 
 This can be viewed by changing the Data Format of the signal to Analog → Step
+
+#### Viewing DAC output in analog mode
+
+Drag and drop the CLK, reset, OUT (DAC) (as analog step), and RV TO DAC [9:0] signals to their respective locations in the simulation tool 
+
+<img width="1280" height="768" alt="image" src="https://github.com/user-attachments/assets/ca1c67b9-17fa-4c0b-a489-78565202f9a3" />
+
+<img width="1211" height="768" alt="image" src="https://github.com/user-attachments/assets/34ff5635-c444-47f4-9dbe-7be510ad98a4" />
+
+### Trouble shooting tips
+
+   - Module Redefinition: If you encounter redefinition errors, ensure modules are included only once, either in the testbench or in the command line.
+   - Path Issues: Verify paths specified with -I are correct. Use full paths if relative paths cause errors.
+
+## Why Pre-Synthesis and Post-Synthesis?
+
+1. **Pre-Synthesis Simulation**: 
+   - Focuses only on verifying functionality based on the RTL code.
+   - Zero-delay environment, with events occurring on the active clock edge.
+
+2. **Post-Synthesis Simulation (GLS)**:
+   - Uses the synthesized netlist (gate-level) to simulate both functionality and timing.
+   - Identifies timing violations and potential mismatches (e.g., unintended latches).
+   - Helps verify dynamic circuit behavior that static methods may miss.
