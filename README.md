@@ -169,3 +169,84 @@ Drag and drop the CLK, reset, OUT (DAC) (as analog step), and RV TO DAC [9:0] si
    - Uses the synthesized netlist (gate-level) to simulate both functionality and timing.
    - Identifies timing violations and potential mismatches (e.g., unintended latches).
    - Helps verify dynamic circuit behavior that static methods may miss.
+
+## VSDBabySoC Post-Synthesis Simulation
+
+Post-synthesis simulation is a critical step in the digital design flow, providing insights into both the functionality and timing of the synthesized design. 
+
+Unlike pre-synthesis simulation, which focuses solely on verifying the functionality based on the RTL code, post-synthesis simulation uses the synthesized netlist to ensure that the design behaves correctly in terms of both logic and timing.
+
+Key aspects of post-synthesis simulation include:
+
+**Functionality and Timing Verification**: It checks the design's functionality and timing using the gate-level netlist, helping identify timing violations and potential mismatches such as unintended latches.
+
+**Dynamic Circuit Behavior**: Post-synthesis simulation can reveal dynamic circuit behaviors that static methods might miss, ensuring the design operates correctly under real-world conditions.
+
+**Identifying Issues**: It helps in identifying issues that may not be apparent in pre-synthesis simulations, such as glitches or race conditions due to the actual gate delays.
+
+The first step in the design flow is to synthesize the generated RTL code, followed by simulating the result. This process helps uncover more about the code and its potential bugs. In this section, we will synthesize our code and then perform a post-synthesis simulation to look for any issues. Ideally, the post-synthesis and pre-synthesis (modeling section) results should be identical, confirming that the synthesis process has not altered the original design behavior.
+
+#### Why do pre-synthesis simulation? Why not just do post-synthesis simulation?
+Pre-synthesis simulation is crucial for verifying the logical functionality of a digital design before it undergoes synthesis. It allows designers to detect and correct logical errors, such as incorrect operator usage or unintended latch inference, early in the development process. This type of simulation focuses solely on the high-level behavior of the design, enabling faster iterations and design exploration without the constraints of gate-level details. On the other hand, post-synthesis simulation, or gate-level simulation, is essential for timing verification and ensuring that the synthesized design meets real-world performance requirements. It accounts for gate delays and helps identify any synthesis-induced issues, providing a final validation of both functionality and timing before the design is implemented in hardware. Together, these simulations ensure a robust and reliable digital design.
+
+Here is the step-by-step execution plan for running the  commands manually:
+---
+### **Step 1: Load the Top-Level Design and Supporting Modules**
+- Launch the yosys synthesis tool from your working directory.
+```bash
+yosys
+```
+<img width="747" height="476" alt="image" src="https://github.com/user-attachments/assets/a997b5e7-dba1-485f-a987-bcf63055fdc2" />
+ 
+- Read the main vsdbabysoc.v RTL file into the yosys environment.
+```bash
+yosys> read_verilog src/module/vsdbabysoc.v 
+```
+<img width="694" height="103" alt="image" src="https://github.com/user-attachments/assets/4b58c73d-f7a7-4de6-8746-2adec49e199c" />
+
+- The following cp commands copy essential header files from the src/include directory into the working directory. These include:
+
+  **sp_verilog.vh** – contains Verilog definitions and macros
+
+  **sandpiper.vh** – holds integration-related definitions for SandPiper
+
+  **sandpiper_gen.vh** – may include auto-generated or tool-generated parameters
+
+```bash
+cd ~/Desktop/VLSI/VSDBabySoC
+cp -r src/include/sp_verilog.vh .
+cp -r src/include/sandpiper.vh .
+cp -r src/include/sandpiper_gen.vh .
+ls
+```
+
+<img width="983" height="140" alt="image" src="https://github.com/user-attachments/assets/7951f285-e36b-4fb0-9b12-2f354fb9e9b3" />
+
+- Read the rvmyth.v file with the include path using -I option.
+```bash
+yosys> read_verilog -I ~/Desktop/VLSI/VSDBabySoC/src/include/ ~/Desktop/VLSI/VSDBabySoC/src/module/rvmyth.v
+```
+<img width="1214" height="170" alt="image" src="https://github.com/user-attachments/assets/348a7e42-9653-47f0-a3e5-d13e00b62ded" />
+
+#### ❗Note:
+
+_If you try to read the rvmyth.v file using yosys without copying the necessary header files first, you may encounter errors.
+
+_To avoid these errors, make sure to copy the required include files into your working directory! This ensures Yosys can resolve them correctly during parsing, even if the -I option is used._
+
+- Read the clk_gate.v file with the include path using -I option.
+
+```bash
+yosys> read_verilog -I ~/Desktop/VLSI/VSDBabySoC/src/include/ ~/Desktop/VLSI/VSDBabySoC/src/module/clk_gate.v
+```
+
+<img width="1046" height="123" alt="image" src="https://github.com/user-attachments/assets/c010441f-6522-4346-9f01-02fae41767e5" />
+
+### **Step 2: Load the Liberty Files for Synthesis**
+Inside the same yosys shell, run:
+```bash
+read_liberty -lib ~/Desktop/VLSI/VSDBabySoC/src/lib/avsdpll.lib 
+read_liberty -lib ~/Desktop/VLSI/VSDBabySoC/src/lib/avsddac.lib 
+read_liberty -lib ~/Desktop/VLSI/VSDBabySoC/src/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
+```
+<img width="1008" height="262" alt="image" src="https://github.com/user-attachments/assets/5d45b841-4db1-46d2-b4e3-da40f12a5bc0" />
