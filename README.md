@@ -665,3 +665,119 @@ These files include:
 - Synthesized gate-level netlist: vsdbabysoc.synth.v
 
 - Timing constraints: vsdbabysoc_synthesis.sdc
+
+These files include:
+
+- Standard cell library: sky130_fd_sc_hd__tt_025C_1v80.lib
+
+- IP-specific Liberty libraries: avsdpll.lib, avsddac.lib
+
+- Synthesized gate-level netlist: vsdbabysoc.synth.v
+
+- Timing constraints: vsdbabysoc_synthesis.sdc
+
+Below is the TCL script to run complete min/max timing checks on the SoC:
+
+<details>
+<summary><strong>vsdbabysoc_min_max_delays.tcl</strong></summary>
+  
+```shell
+# Load Liberty Libraries (standard cell + IPs)
+read_liberty -min /data/Desktop/VLSI/VSDBabySoC/OpenSTA/examples/timing_libs/sky130_fd_sc_hd__tt_025C_1v80.lib
+read_liberty -max /data/Desktop/VLSI/VSDBabySoC/OpenSTA/examples/timing_libs/sky130_fd_sc_hd__tt_025C_1v80.lib
+
+read_liberty -min /data/Desktop/VLSI/VSDBabySoC/OpenSTA/examples/timing_libs/avsdpll.lib
+read_liberty -max /data/Desktop/VLSI/VSDBabySoC/OpenSTA/examples/timing_libs/avsdpll.lib
+
+read_liberty -min /data/Desktop/VLSI/VSDBabySoC/OpenSTA/examples/timing_libs/avsddac.lib
+read_liberty -max /data/Desktop/VLSI/VSDBabySoC/OpenSTA/examples/timing_libs/avsddac.lib
+
+# Read Synthesized Netlist
+read_verilog /data/Desktop/VLSI/VSDBabySoC/OpenSTA/examples/BabySoC/vsdbabysoc.synth.v
+
+# Link the Top-Level Design
+link_design vsdbabysoc
+
+# Apply SDC Constraints
+read_sdc /data/Desktop/VLSI/VSDBabySoC/OpenSTA/examples/BabySoC/vsdbabysoc_synthesis.sdc
+
+# Generate Timing Report
+report_checks
+```
+
+</details>
+
+| **Line of Code**                                       | **Purpose**                | **Explanation**                                                                                    |
+| ------------------------------------------------------ | -------------------------- | -------------------------------------------------------------------------------------------------- |
+| `read_liberty -min ...sky130...` & `-max ...sky130...` | Load standard cell library | Loads the **typical PVT corner** for both min (hold) and max (setup) timing analysis.              |
+| `read_liberty -min/-max avsdpll.lib`                   | Load PLL IP Liberty        | Includes Liberty timing views of the **PLL IP** used in the design.                                |
+| `read_liberty -min/-max avsddac.lib`                   | Load DAC IP Liberty        | Includes Liberty timing views of the **DAC IP** used in the design.                                |
+| `read_verilog vsdbabysoc.synth.v`                      | Load synthesized netlist   | Loads the gate-level Verilog netlist of the **VSDBabySoC** design.                                 |
+| `link_design vsdbabysoc`                               | Link top-level module      | Links the hierarchy using `vsdbabysoc` as the **top module** for timing analysis.                  |
+| `read_sdc vsdbabysoc_synthesis.sdc`                    | Load constraints           | Loads SDC file specifying **clock definitions, input/output delays, and false paths**.             |
+| `report_checks`                                        | Run timing analysis        | Generates a default **setup timing report**. Add `-path_delay min_max` to see both hold and setup. |
+
+execute it inside the Docker container:
+
+```shell
+\docker run -it -v $HOME:/data opensta /data/VLSI/VSDBabySoC/OpenSTA/examples/BabySoC/vsdbabysoc_min_max_delays.tcl
+```
+⚠️ **Possible Error Alert**
+
+You may encounter the following error when running the script:
+
+```shell
+Warning: /data/Desktop/VLSI/VSDBabySoC/OpenSTA/examples/timing_libs/sky130_fd_sc_hd__tt_025C_1v80.lib line 23, default_fanout_load is 0.0.
+Warning: /data/Desktop/VLSI/VSDBabySoC/OpenSTA/examples/timing_libs/sky130_fd_sc_hd__tt_025C_1v80.lib line 1, library sky130_fd_sc_hd__tt_025C_1v80 already exists.
+Warning: /data/Desktop/VLSI/VSDBabySoC/OpenSTA/examples/timing_libs/sky130_fd_sc_hd__tt_025C_1v80.lib line 23, default_fanout_load is 0.0.
+Error: /data/Desktop/VLSI/VSDBabySoC/OpenSTA/examples/timing_libs/avsdpll.lib line 54, syntax error
+```
+
+✅ **Fix:**
+
+This error occurs because Liberty syntax does not support // for single-line comments, and more importantly, the { character appearing after // confuses the Liberty parser. Specifically, check around _line 54 of avsdpll.lib_ and correct any syntax issues such as:
+
+```shell
+//pin (GND#2) {
+//  direction : input;
+//  max_transition : 2.5;
+//  capacitance : 0.001;
+//}
+```
+✔️ **Replace with:**
+```shell
+/*
+pin (GND#2) {
+  direction : input;
+  max_transition : 2.5;
+  capacitance : 0.001;
+}
+*/
+```
+This should allow OpenSTA to parse the Liberty file without throwing syntax errors.
+
+<img width="284" height="494" alt="image" src="https://github.com/user-attachments/assets/daf7a7a1-c565-4b6a-b2dc-9057726f0eba" />
+
+After fixing the Liberty file comment syntax as shown above, you can rerun the script to perform complete timing analysis for VSDBabySoC:
+
+<img width="1227" height="775" alt="image" src="https://github.com/user-attachments/assets/e0d19f6f-1926-48b0-bba3-0b82fd12dd20" />
+
+### VSDBabySoC PVT Corner Analysis (Post-Synthesis Timing)
+Static Timing Analysis (STA) is performed across various **PVT (Process-Voltage-Temperature)** corners to ensure the design meets timing requirements under different conditions.
+
+### Critical Timing Corners
+
+**Worst Max Path (Setup-critical) Corners:**
+- `ss_LowTemp_LowVolt`
+- `ss_HighTemp_LowVolt`  
+_These represent the **slowest** operating conditions._
+
+**Worst Min Path (Hold-critical) Corners:**
+- `ff_LowTemp_HighVolt`
+- `ff_HighTemp_HighVolt`  
+_These represent the **fastest** operating conditions._
+
+ **Timing libraries** required for this analysis can be downloaded from:  
+🔗 [Skywater PDK - sky130_fd_sc_hd Timing Libraries](https://github.com/efabless/skywater-pdk-libs-sky130_fd_sc_hd/tree/master/timing)
+
+
