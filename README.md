@@ -16,7 +16,7 @@
 - [log_cmd global_route -start_incremental](#log_cmd-global_route--start_incremental)
 - [recover_power_helper](#recover_power_helper)
 - [Route the modified nets by rsz journal restore](#route-the-modified-nets-by-rsz-journal-restore)
-- [log_cmd global_route -end_incremental {*}$res_aware \](#log_cmd-global_route--end_incremental-res_aware-)
+- [global_routing fix](#log_cmd-global_route--end_incremental-res_aware-)
 - [Write SDC to results with updated clock periods that are just failing.](#write-sdc-to-results-with-updated-clock-periods-that-are-just-failing)
 - [Use make target update_sdc_clock to install the updated sdc.](#use-make-target-update_sdc_clock-to-install-the-updated-sdc)
 
