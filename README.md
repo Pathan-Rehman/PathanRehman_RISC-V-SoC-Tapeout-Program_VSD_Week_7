@@ -1,3 +1,25 @@
+# Table of contents
+
+- [Week 7 Task – BabySoC Physical Design & Post-Route SPEF Generation](#week-7-task--babysoc-physical-design--post-route-spef-generation)
+- [Floorplan and Placement of VSDBabySoC in OpenROAD](#floorplan-and-placement-of-vsdbabysoc-in-openroad)
+- [Macro Configuration File Documentation](#macro-configuration-file-documentation)
+- [This proc is here to allow us to use 'return' to return early from this](#this-proc-is-here-to-allow-us-to-use-return-to-return-early-from-this)
+- [file which is sourced](#file-which-is-sourced)
+- [Repair design using global route parasitics](#repair-design-using-global-route-parasitics)
+- [Running DPL to fix overlapped instances](#running-dpl-to-fix-overlapped-instances)
+- [Run to get modified net by DPL](#run-to-get-modified-net-by-dpl)
+- [Route only the modified net by DPL](#route-only-the-modified-net-by-dpl)
+- [Repair timing using global route parasitics](#repair-timing-using-global-route-parasitics)
+- [Running DPL to fix overlapped instances](#running-dpl-to-fix-overlapped-instances)
+- [Run to get modified net by DPL](#run-to-get-modified-net-by-dpl)
+- [Route only the modified net by DPL](#route-only-the-modified-net-by-dpl)
+- [log_cmd global_route -start_incremental](#log_cmd-global_route--start_incremental)
+- [recover_power_helper](#recover_power_helper)
+- [Route the modified nets by rsz journal restore](#route-the-modified-nets-by-rsz-journal-restore)
+- [log_cmd global_route -end_incremental {*}$res_aware \](#log_cmd-global_route--end_incremental-res_aware-)
+- [Write SDC to results with updated clock periods that are just failing.](#write-sdc-to-results-with-updated-clock-periods-that-are-just-failing)
+- [Use make target update_sdc_clock to install the updated sdc.](#use-make-target-update_sdc_clock-to-install-the-updated-sdc)
+
 # Week 7 Task – BabySoC Physical Design & Post-Route SPEF Generation
 
 This document presents the complete physical design implementation of the BabySoC using OpenROAD, covering all stages from floorplanning to post-route parasitic extraction (SPEF generation). The objective of this task is to integrate the theoretical and practical aspects of digital design by executing a full RTL-to-GDSII flow on a real System-on-Chip (SoC).
